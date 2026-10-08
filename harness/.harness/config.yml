@@ -1,0 +1,6 @@
+lineLimit: 200
+oneFeatureInProgress: true
+requireHumanGateAt: spec_ready
+requireTestsToClose: true
+knowledgeBundle: knowledge
+okfVersion: "0.2"

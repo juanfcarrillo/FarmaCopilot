@@ -1,0 +1,1 @@
+export function Brand({ light = false }: { light?: boolean }) { return <div className={`brand ${light ? 'brand-light' : ''}`}><span className="brand-symbol" aria-hidden="true"><i/><i/></span><span>farmaenlace<span className="brand-dot">.</span></span></div>; }

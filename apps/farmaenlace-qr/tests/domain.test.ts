@@ -22,6 +22,6 @@ describe('registro QR y privacidad', () => {
     expect(() => assertAccepting({ ...s, status: 'cancelled' }, 1000)).toThrow();
     expect(() => assertOwner(s, 'other')).toThrow();
     expect(() => assertOwner(s, 'owner')).not.toThrow();
-    expect(publicSession({ ...s, email: 'private@example.com', document: valid.document, tokenHash: 'private', customerId: 'internal' }, 2001)).toEqual({ id: 'session', expiresAt: 2000, createdAt: 1000, status: 'expired', location: 'Local 1', register: 'Caja 1', code: null, recordedAt: null, integrationStatus: 'not_connected' });
+    expect(publicSession({ ...s, email: 'private@example.com', document: valid.document, tokenHash: 'private', customerId: 'internal' }, 2001)).toEqual({ id: 'session', expiresAt: 2000, createdAt: 1000, status: 'expired', location: 'Local 1', register: 'Caja 1', code: null, recordedAt: null, integrationStatus: 'not_connected', registrationMethod: null });
   });
 });

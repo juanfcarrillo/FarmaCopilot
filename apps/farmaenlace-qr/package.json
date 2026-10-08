@@ -8,7 +8,7 @@
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run tests/domain.test.ts",
+    "test": "vitest run tests/domain.test.ts tests/demo-sale.test.ts",
     "test:integration": "vitest run tests/firestore.test.ts tests/rules.test.ts tests/http.test.ts",
     "test:e2e": "playwright test",
     "emulators": "firebase emulators:start --only firestore --project demo-farmaenlace",

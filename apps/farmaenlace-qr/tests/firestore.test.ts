@@ -14,6 +14,50 @@ beforeEach(async () => {
   now = 100000; service = new RegistrationService(db, { secret: 'integration-only-secret-never-use-production', now: () => now });
 });
 describe('Firestore transaccional real', () => {
+  it('captura asistida exige la caja propietaria y conserva fuente sin exponer PII', async () => {
+    const a = await service.create('owner', 'A', '1');
+    await expect(service.submitAssisted(a.session.id, 'other', body)).rejects.toMatchObject({ status: 404 });
+    expect((await db.collection('customers').get()).size).toBe(0);
+    const result = await service.submitAssisted(a.session.id, 'owner', body);
+    expect(result.status).toBe('registered');
+    const view = await service.get(a.session.id, 'owner');
+    expect(view.registrationMethod).toBe('assisted');
+    expect(JSON.stringify(view)).not.toContain(body.document);
+    expect(JSON.stringify(view)).not.toContain(body.email);
+    const customer = (await db.collection('customers').get()).docs[0].data();
+    expect(customer).toMatchObject({ source: 'pos_assisted', marketing: false, documentVerified: false });
+    expect((await db.doc(`events/${a.session.id}.registered`).get()).get('source')).toBe('pos_assisted');
+    await expect(service.submitAssisted(a.session.id, 'owner', body)).resolves.toEqual(result);
+    const b = await service.create('owner', 'A', '1');
+    await service.submitAssisted(b.session.id, 'owner', { ...body, email: 'dictado@example.com', marketing: true });
+    expect((await db.collection('customers').get()).size).toBe(1);
+    expect((await db.collection('customers').get()).docs[0].get('email')).toBe(body.email);
+    expect((await db.doc(`customerObservations/${b.session.id}`).get()).data()).toMatchObject({ source: 'pos_assisted', status: 'pending_unverified' });
+  });
+  it('QR y dictado concurrentes confirman un único registro; no reemplazan datos ni fuente', async () => {
+    const a = await service.create('owner', 'A', '1');
+    const results = await Promise.allSettled([
+      service.submit(a.session.id, a.qrToken, body),
+      service.submitAssisted(a.session.id, 'owner', { ...body, document: '0926687856' }),
+    ]);
+    expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(1);
+    expect(results.find(r => r.status === 'rejected')).toMatchObject({ reason: { status: 409 } });
+    expect((await db.collection('customers').get()).size).toBe(1);
+    expect((await db.collection('events').get()).size).toBe(3);
+    const stored = (await db.doc(`registrationSessions/${a.session.id}`).get()).data()!;
+    const method = stored.registrationMethod;
+    const canonical = (await db.collection('customers').get()).docs[0].data();
+    await Promise.all([service.submit(a.session.id, a.qrToken, { ...body, document: canonical.document }), service.submitAssisted(a.session.id, 'owner', { ...body, document: canonical.document })]);
+    expect((await service.get(a.session.id, 'owner')).registrationMethod).toBe(method);
+  });
+  it('registro asistido rechaza sesiones vencidas y canceladas sin crear clientes', async () => {
+    const a = await service.create('owner', 'A', '1');
+    now += 600000;
+    await expect(service.submitAssisted(a.session.id, 'owner', body)).rejects.toMatchObject({ status: 410 });
+    const b = await service.create('owner', 'A', '1'); await service.cancel(b.session.id, 'owner');
+    await expect(service.submitAssisted(b.session.id, 'owner', body)).rejects.toMatchObject({ status: 410 });
+    expect((await db.collection('customers').get()).size).toBe(0);
+  });
   it('emite un código único y eventos una sola vez bajo reintentos concurrentes', async () => {
     const created = await service.create('owner', 'Local 1', 'Caja 1');
     const results = await Promise.all(Array.from({ length: 4 }, () => service.submit(created.session.id, created.qrToken, body)));

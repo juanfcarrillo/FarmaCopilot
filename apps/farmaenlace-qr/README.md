@@ -4,20 +4,35 @@ MVP de identificación y trazabilidad en caja, sin cuentas ni login. Next.js,
 React y TypeScript; Firestore mediante Firebase Admin en el servidor; preparado
 para el despliegue automático del repositorio en Vercel.
 
-## Flujo
+## Flujo actual: mock Vendix
 
-1. El dependiente abre `/pos`, indica local/caja y genera un QR de diez minutos.
-2. El cliente escanea y completa cédula ecuatoriana, correo y una preferencia
-   opcional de promociones desde `/registro`.
-3. Una transacción guarda el registro y devuelve un código único. El teléfono
-   y la caja reciben el mismo código; la caja se actualiza en tiempo real.
-4. El dependiente introduce el código en Vendix. Puede guardar aquí una
-   constancia manual con referencia de ticket opcional.
+1. El dependiente abre `/pos`, sin login, e identifica al cliente por QR o con
+   **Datos dictados** (cédula y correo ingresados en caja).
+2. El QR tiene vigencia de diez minutos. El cliente completa el formulario en
+   su teléfono; el consentimiento de promociones es opcional y desmarcado.
+3. Firebase guarda el registro y la caja recibe automáticamente la confirmación.
+   El teléfono agradece y permite continuar con el beneficio de demostración.
+   No se muestra un código para copiar o introducir en Vendix.
+4. El mock presenta dos productos con precios ficticios. Aplica automáticamente
+   un **10% demo** solo después de que el servidor confirma el registro.
+5. **Finalizar venta simulada** crea un comprobante local en el navegador;
+   **Siguiente cliente** limpia el contexto y permite una nueva atención.
 
-La constancia no confirma una venta desde Vendix. No hay una integración API
-implementada ni un campo de Vendix validado: el responsable debe acordar dónde
-registrar el código. `src/lib/vendix.ts` declara el contrato para un adaptador
-futuro. SmartClub y el motor de promociones están fuera de este MVP.
+La identidad se guarda en el Firestore configurado. El carrito, descuento y
+comprobante son ficticios: no hay cobro, factura, compra real ni conexión con
+Vendix/PromoGo. El comprobante se conserva en esta pestaña tras recargar y no se
+incorpora como historial de compra al perfil. La API mantiene códigos internos
+opacos y el endpoint legacy de constancia manual por compatibilidad; la UI ya
+no los solicita. `src/lib/vendix.ts` conserva el contrato del adaptador futuro.
+SmartClub está excluido.
+
+La captura dictada usa la misma transacción y deduplicación que el QR, pero exige
+la capacidad HttpOnly de la caja propietaria. QR y dictado concurrentes no
+reemplazan el primer registro confirmado. Se guarda `registrationMethod` y el
+origen `pos_qr`/`pos_assisted` para medir ambos caminos; no se devuelve PII a la
+caja. Cédula/correo del formulario asistido permanecen únicamente en memoria y
+se limpian al guardar, cambiar de método o cancelar. El registro no acredita la
+identidad del cliente ni del dependiente.
 
 ## Ejecutar localmente
 
@@ -48,8 +63,8 @@ Para probar con un teléfono, usar la misma red y abrir la consola mediante la
 IP del equipo, por ejemplo `http://192.168.1.20:3000/pos`. Cambiar `APP_BASE_URL`
 en `.env.local` al mismo origen y reiniciar Next. El QR utiliza el origen desde
 el que se abre la consola; no abrirla mediante `localhost` para ese ensayo.
-El teléfono solo accede a Next, nunca al emulador. Si copiar al portapapeles no
-está disponible en HTTP local, mostrar el código directamente.
+El teléfono solo accede a Next, nunca al emulador. La confirmación llega a caja
+automáticamente; no depende del portapapeles.
 
 ## Validación
 
@@ -73,8 +88,9 @@ Las pruebas de integración vacían el proyecto **del emulador** entre casos.
 No ejecutarlas durante una demostración que deba conservar sesiones locales.
 Cubren concurrencia, códigos únicos, perfiles duplicados, discrepancias de
 correo, aislamiento de cajas, QR cancelado/vencido, reintentos, reglas y límites
-HTTP. E2E usa contextos separados para caja y cliente, compara códigos sin
-recargar la caja y comprueba recuperación tras recarga y constancia manual.
+HTTP. E2E usa contextos separados para caja y cliente y verifica agradecimiento,
+beneficio, captura asistida, cancelación, aislamiento, reintentos y recarga.
+El cierre demo no escribe una venta ni una constancia manual en Firestore.
 
 ## Conectar Firebase después
 
@@ -137,8 +153,9 @@ las variables, lanzar un nuevo despliegue desde el flujo habitual del repositori
 La UI compila sin Firebase. Sin configuración, registrar devuelve un error
 explícito y no simula datos guardados. `/api/health` informa la presencia de
 configuración y el tipo de almacenamiento; no demuestra conectividad real.
-La verificación cloud pendiente consiste en completar un registro desde un
-teléfono y comprobar el mismo código en la caja contra el proyecto real.
+Las pruebas de registro se ejecutan contra el emulador. La aceptación con un
+cliente en cloud se puede realizar desde el teléfono y confirmar el estado en
+la caja; los ensayos automáticos no escriben perfiles en producción.
 
 ## Datos y límites de integración
 
@@ -148,14 +165,14 @@ teléfono y comprobar el mismo código en la caja contra el proyecto real.
   preferencias canónicas. No hay corrección de identidad pública.
 - `registrationSessions` y `registrationCodes`: sesión, código y vínculo interno.
 - `events`: creación, registro, código y constancia manual para trazabilidad.
-- `manualVendixRecords`: declaración del dependiente, `manual_unverified`.
+- `manualVendixRecords`: endpoint legacy, `manual_unverified`; el mock actual no lo invoca.
 
 Es una base para alimentar el perfil de referencia. No sincroniza todavía el
 maestro corporativo, historial de ventas, devoluciones ni promociones. Tampoco
 envía correos o verifica titularidad de la cédula. Las discrepancias necesitan
 un proceso posterior de resolución antes de activar acciones comerciales.
 
-La consola solo recibe código/estado. Una cookie opaca HttpOnly, emitida sin
+La consola recibe estado y referencias opacas, sin mostrar el código interno. Una cookie opaca HttpOnly, emitida sin
 login, vincula el navegador con sus sesiones; no es una identidad verificada del
 dependiente. Para probar dos cajas aisladas usar perfiles/contextos de navegador
 distintos. El token QR y el código no contienen datos personales. No existe
@@ -166,7 +183,7 @@ en 24 segundos y reconecta; la UI indica si usa polling de respaldo.
 con el HMAC del contenido normalizado: repetir el mismo contenido devuelve el
 mismo código; cambiar la key no permite reemplazar un registro ya emitido.
 
-## Evidencia de entrega local · 8 de octubre de 2026
+## Evidencia inicial · 8 de octubre de 2026 (flujo anterior)
 
 17 pruebas correctas: dominio 3, integración Firestore/reglas/HTTP 9 y E2E 5.
 Lint sin errores/advertencias, TypeScript y build de producción correctos.
@@ -177,9 +194,21 @@ Capturas de la interfaz actual: [caja tablet](docs/preview/pos-desktop.jpg),
 [caja móvil](docs/preview/pos-mobile.jpg), [formulario móvil](docs/preview/registro-form-mobile.jpg)
 y [resultado móvil](docs/preview/registro-mobile.jpg).
 [Revisión UI con Impeccable e identidad pública](docs/ui-review.md).
-Firebase real y despliegue Vercel verificados; el vínculo con Vendix continúa mediante ingreso manual, sin API.
+Firebase real y despliegue Vercel verificados. Esta evidencia corresponde al flujo anterior; la corrección posterior elimina el ingreso de códigos de la UI.
 
 Referencias: [Next.js en Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs),
 [duración de funciones](https://vercel.com/docs/functions/configuring-functions/duration),
 [Firebase Admin](https://firebase.google.com/docs/admin/setup),
 [emulador Firestore](https://firebase.google.com/docs/emulator-suite/connect_firestore).
+
+## Corrección posterior: mock Vendix y captura asistida
+
+TDD de transacciones asistidas y beneficio en centavos, con pruebas de
+concurrencia QR/dictado, permisos de caja, origen HTTP y consentimiento. Pruebas
+E2E de agradecimiento, actualización sin recargar, beneficio automático,
+comprobante solo local y limpieza al cancelar. Ver [revisión del mock](docs/vendix-mock-review.md).
+
+- [Caja con comprobante demo](docs/preview/vendix-desktop.jpg).
+- [Beneficio en pantalla de 320 px](docs/preview/vendix-mobile.jpg).
+
+- [Agradecimiento del cliente](docs/preview/vendix-customer-thanks.jpg).

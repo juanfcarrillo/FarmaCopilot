@@ -1,4 +1,4 @@
-export type SessionView = { id: string; status: 'awaiting_customer' | 'registered' | 'recorded_manual' | 'cancelled' | 'expired'; code: string | null; createdAt: number; expiresAt: number; recordedAt: number | null; location: string; register: string; integrationStatus: 'not_connected' };
+export type SessionView = { id: string; status: 'awaiting_customer' | 'registered' | 'recorded_manual' | 'cancelled' | 'expired'; code: string | null; createdAt: number; expiresAt: number; recordedAt: number | null; location: string; register: string; integrationStatus: 'not_connected'; registrationMethod: 'qr' | 'assisted' | null };
 export class ApiFailure extends Error { constructor(message: string, readonly code: string, readonly status: number) { super(message); } }
 export async function api<T>(url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, { method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', cache: 'no-store', headers: body === undefined ? undefined : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });

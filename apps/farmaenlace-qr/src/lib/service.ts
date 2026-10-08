@@ -19,6 +19,13 @@ export class RegistrationService {
   private async owned(id: string, owner: string) { const doc = await this.db.doc(`registrationSessions/${id}`).get(); const session = doc.data() as StoredSession | undefined; assertOwner(session, owner); return session!; }
   async get(id: string, owner: string) { return publicSession(await this.owned(id, owner), this.now()); }
   async submit(id: string, token: string, input: unknown) {
+    return this.register(id, { method: 'qr', capability: token }, input);
+  }
+  async submitAssisted(id: string, owner: string, input: unknown) {
+    await this.owned(id, owner);
+    return this.register(id, { method: 'assisted', capability: owner }, input);
+  }
+  private async register(id: string, authorization: { method: 'qr' | 'assisted'; capability: string }, input: unknown) {
     const registration = validateRegistration(input);
     const key = (input as Record<string, unknown>).idempotencyKey;
     if (typeof key !== 'string' || key.length < 8 || key.length > 100) throw new DomainError(400, 'No pudimos identificar este envío. Vuelve a intentarlo.');
@@ -30,8 +37,11 @@ export class RegistrationService {
       try {
         return await this.db.runTransaction(async tx => {
           const sessionRef = this.db.doc(`registrationSessions/${id}`), snapshot = await tx.get(sessionRef), session = snapshot.data() as StoredSession | undefined;
-          if (!session || !session.tokenHash || !secretMatches(token, session.tokenHash)) throw new DomainError(404, 'Este QR no está disponible. Pide uno nuevo al dependiente.', 'not_found');
-          if (session.code) { if (session.submissionHash !== fingerprint) throw new DomainError(409, 'Este QR ya tiene un registro. Muestra el código recibido o pide un nuevo QR.', 'consumed'); return { code: session.code, status: 'registered' as const }; }
+          if (authorization.method === 'assisted') assertOwner(session, authorization.capability);
+          else if (!session || !session.tokenHash || !secretMatches(authorization.capability, session.tokenHash)) throw new DomainError(404, 'Este QR no está disponible. Pide uno nuevo al dependiente.', 'not_found');
+          if (!session) throw new DomainError(404, 'La sesión no está disponible.', 'not_found');
+          if (session.code) { if (session.submissionHash !== fingerprint) throw new DomainError(409, 'Esta compra ya tiene un cliente registrado. Continúa en caja o inicia el siguiente registro.', 'consumed'); return { code: session.code, status: 'registered' as const }; }
+          const source = authorization.method === 'qr' ? 'pos_qr' : 'pos_assisted';
           const now = this.now(); assertAccepting(session, now);
           const codeRef = this.db.doc(`registrationCodes/${code}`), keyRef = this.db.doc(`customerKeys/${customerKey}`);
           const [codeSnapshot, keySnapshot] = await Promise.all([tx.get(codeRef), tx.get(keyRef)]);
@@ -40,15 +50,15 @@ export class RegistrationService {
           const customerRef = this.db.doc(`customers/${customerId}`), customerSnapshot = await tx.get(customerRef);
           if (!keySnapshot.exists) {
             tx.create(keyRef, { customerId, createdAt: now });
-            tx.create(customerRef, { ...registration, id: customerId, documentVerified: false, emailVerified: false, source: 'pos_qr', createdAt: now, updatedAt: now });
+            tx.create(customerRef, { ...registration, id: customerId, documentVerified: false, emailVerified: false, source, createdAt: now, updatedAt: now });
           } else if (customerSnapshot.get('email') !== registration.email || customerSnapshot.get('marketing') !== registration.marketing) {
             // La captura pública no puede cambiar la identidad ni preferencias canónicas.
-            tx.create(this.db.doc(`customerObservations/${id}`), { customerId, sessionId: id, email: registration.email, marketing: registration.marketing, status: 'pending_unverified', source: 'pos_qr', createdAt: now });
+            tx.create(this.db.doc(`customerObservations/${id}`), { customerId, sessionId: id, email: registration.email, marketing: registration.marketing, status: 'pending_unverified', source, createdAt: now });
           }
           tx.create(codeRef, { sessionId: id, customerId, createdAt: now });
-          tx.update(sessionRef, { status: 'registered', code, customerId, submissionHash: fingerprint, registeredAt: now });
-          tx.create(this.db.doc(`events/${id}.registered`), { type: 'customer_registered', customerId, sessionId: id, at: now, source: 'pos_qr' });
-          tx.create(this.db.doc(`events/${id}.code`), { type: 'code_issued', customerId, sessionId: id, at: now, source: 'pos_qr' });
+          tx.update(sessionRef, { status: 'registered', code, customerId, submissionHash: fingerprint, registeredAt: now, registrationMethod: authorization.method });
+          tx.create(this.db.doc(`events/${id}.registered`), { type: 'customer_registered', customerId, sessionId: id, at: now, source });
+          tx.create(this.db.doc(`events/${id}.code`), { type: 'code_issued', customerId, sessionId: id, at: now, source });
           return { code, status: 'registered' as const };
         });
       } catch (error) { if (!(error instanceof CodeCollision)) throw error; }

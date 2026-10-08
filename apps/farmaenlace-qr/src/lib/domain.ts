@@ -4,7 +4,7 @@ import { isValidDocument, isValidEmail } from './validation';
 import type { SessionView } from './client';
 export class DomainError extends Error { constructor(readonly status: number, message: string, readonly code = 'invalid') { super(message); } }
 export type Registration = { document: string; email: string; marketing: boolean };
-export type StoredSession = { id: string; ownerHash: string; tokenHash?: string; createdAt: number; expiresAt: number; status: SessionView['status']; location: string; register: string; code?: string; customerId?: string; submissionHash?: string; recordedAt?: number; manualTicket?: string; [key: string]: unknown };
+export type StoredSession = { id: string; ownerHash: string; tokenHash?: string; createdAt: number; expiresAt: number; status: SessionView['status']; location: string; register: string; code?: string; customerId?: string; submissionHash?: string; recordedAt?: number; manualTicket?: string; registrationMethod?: 'qr' | 'assisted'; [key: string]: unknown };
 export function validateRegistration(input: unknown): Registration {
   if (!input || typeof input !== 'object') throw new DomainError(400, 'Completa tus datos para continuar.');
   const data = input as Record<string, unknown>;
@@ -25,5 +25,5 @@ export function assertAccepting(session: StoredSession, now: number) {
   if (session.status !== 'awaiting_customer') throw new DomainError(409, 'Este QR ya fue utilizado.', 'consumed');
 }
 export function publicSession(session: StoredSession, now = Date.now()): SessionView {
-  return { id: session.id, createdAt: session.createdAt, expiresAt: session.expiresAt, status: session.status === 'awaiting_customer' && session.expiresAt <= now ? 'expired' : session.status, location: session.location, register: session.register, code: session.code || null, recordedAt: session.recordedAt || null, integrationStatus: 'not_connected' };
+  return { id: session.id, createdAt: session.createdAt, expiresAt: session.expiresAt, status: session.status === 'awaiting_customer' && session.expiresAt <= now ? 'expired' : session.status, location: session.location, register: session.register, code: session.code || null, recordedAt: session.recordedAt || null, integrationStatus: 'not_connected', registrationMethod: session.registrationMethod || null };
 }

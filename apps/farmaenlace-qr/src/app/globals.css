@@ -84,21 +84,6 @@ a { text-underline-offset: .2em; }
 .text-button.muted { color: var(--body); }
 .form-link { text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
 .result-card { padding: 22px 24px; }
-.code-placeholder { text-align: left; margin-top: 22px; padding: 0 0 22px; border-bottom: 1px solid var(--line); }
-.code-label { font-size: 13px; color: var(--body); }
-.code-placeholder strong { display: block; font-family: var(--heading); font-size: clamp(20px, 2.2vw, 27px); letter-spacing: .025em; color: #697792; margin-top: 10px; overflow-wrap: anywhere; line-height: 1.4; }
-.code-placeholder p { font-size: 14px; color: var(--body); margin-top: 10px; max-width: 36ch; }
-.code-placeholder.has-code strong { color: var(--primary); }
-.code-placeholder.has-code { border-bottom-color: var(--success-line); }
-.code-placeholder + .secondary { margin-top: 16px; }
-.result-divider { height: 0; margin: 22px 0 0; }
-.progress-line { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 20px; }
-.progress-line:last-child { margin-bottom: 0; }
-.progress-dot { background: #f1f4f8; border: 1px solid var(--line); color: var(--body); display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 50%; font-size: 12px; flex-shrink: 0; }
-.progress-dot.completed { background: var(--pale); color: var(--success); border-color: var(--success-line); }
-.progress-line b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.5; }
-.progress-line p { font-size: 12px; color: var(--body); margin-top: 3px; }
-.progress-spinner { margin-left: auto; color: var(--primary); margin-top: 5px; }
 .privacy-note { display: flex; align-items: flex-start; gap: 10px; margin: 16px 4px 0; color: var(--success); }
 .privacy-note svg { flex-shrink: 0; margin-top: 2px; }
 .privacy-note p { font-size: 12px; line-height: 1.6; color: var(--body); }
@@ -114,15 +99,6 @@ a { text-underline-offset: .2em; }
 .alert button { border: 0; background: transparent; color: inherit; padding: 10px; min-height: 44px; min-width: 44px; }
 .received-state h3 { margin-top: 18px; font-size: 23px; }
 .success-orbit { display: inline-flex; align-items: center; justify-content: center; width: 74px; height: 74px; border-radius: 50%; color: var(--success); background: var(--pale); }
-.manual-form { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 8px; }
-.manual-form label { display: block; font-size: 14px; color: var(--ink); margin-bottom: 8px; }
-.manual-form label span { font-size: 12px; color: var(--body); }
-.manual-form input { width: 100%; padding: 11px 12px; border: 1px solid #b6c0d0; color: var(--ink); font-size: 14px; min-height: 46px; margin-bottom: 12px; }
-.manual-form input::placeholder { color: var(--muted); }
-.manual-form .primary { font-size: 14px; }
-.manual-success { display: flex; align-items: flex-start; gap: 8px; background: var(--pale); padding: 14px; border-radius: 8px; font-size: 14px; color: var(--success); }
-.manual-success > svg { flex-shrink: 0; margin-top: 2px; }
-.manual-success small { display: block; font-size: 12px; margin-top: 4px; }
 .new-session { margin-top: 16px; }
 .spin { animation: spin 1.4s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -157,9 +133,6 @@ a { text-underline-offset: .2em; }
 .no-account { text-align: center; font-size: 12px; color: var(--body); margin-top: 12px; }
 .customer-footer { text-align: center; color: var(--body); font-size: 12px; margin-top: 24px; }
 .customer-bottom-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: var(--lime); }
-.customer-code { padding: 20px 0; border-block: 1px solid var(--line); }
-.customer-code > span { font-size: 12px; color: var(--body); font-weight: 600; }
-.customer-code strong { display: block; font-family: var(--heading); font-size: clamp(20px, 5.5vw, 27px); letter-spacing: .02em; color: var(--primary); margin: 12px 0 20px; overflow-wrap: anywhere; }
 .success-caption { display: flex; gap: 10px; align-items: flex-start; margin: 22px 0 0; color: var(--success); }
 .success-caption > svg { flex-shrink: 0; margin-top: 2px; }
 .success-caption p { font-size: 14px; color: var(--body); line-height: 1.7; }
@@ -178,7 +151,6 @@ a { text-underline-offset: .2em; }
   .card-title h2 { font-size: 16px; }
   .qr-stage { padding-inline: 20px; }
   .qr-footer { padding-inline: 20px; }
-  .code-placeholder strong { font-size: 22px; letter-spacing: 0; }
 }
 @media (max-width: 700px) {
   .topbar-inner { min-height: 72px; padding: 16px 20px; }
@@ -190,12 +162,10 @@ a { text-underline-offset: .2em; }
   .work-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .registration-ready .result-column { order: -1; }
   .card-head { padding: 18px 20px; }
-  .station-fields input, .manual-form input { font-size: 16px; }
   .qr-stage { min-height: 310px; padding: 24px 20px; }
   .qr-stage.stage-success { min-height: 210px; }
   .qr-stage h3 { font-size: 18px; }
   .qr-stage .primary { width: 100%; }
-  .code-placeholder strong { font-size: 26px; }
   .result-card { padding: 22px 20px; }
   .integration-note { margin-top: 20px; }
   .main-footer { align-items: flex-start; flex-direction: column; padding-top: 20px; gap: 8px; }
@@ -212,11 +182,73 @@ a { text-underline-offset: .2em; }
   .card-head, .result-card { padding-inline: 16px; }
   .station-fields { margin-inline: 16px; gap: 10px; }
   .qr-footer { padding-inline: 16px; }
-  .code-placeholder strong { font-size: 23px; }
   .customer-main { padding-inline: 12px; }
   .customer-card { padding: 24px 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   button { transition: none; }
   .spin { animation: none; }
+}
+
+/* Vendix: simulación de caja con identificación QR o asistida. */
+.demo-tag { font-size: 10px; font-weight: 700; letter-spacing: .08em; padding: 4px 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--primary); background: #f0f3fa; }
+.eyebrow { display: block; font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--body); margin-bottom: 8px; }
+.capture-switch { display: flex; margin: 20px 24px 0; padding: 4px; gap: 4px; border-radius: 10px; background: #eef2f7; }
+.capture-switch button { flex: 1; border: 1px solid transparent; padding: 10px 8px; min-height: 44px; color: var(--body); font-size: 14px; font-weight: 600; background: transparent; }
+.capture-switch button.selected { background: var(--white); border-color: var(--line); color: var(--primary); }
+.capture-source { display: inline-block; color: var(--success); font-size: 12px; margin-top: 16px; }
+.assisted-form { padding: 24px; }
+.assisted-form h3 { font-size: 18px; font-weight: 800; letter-spacing: -.025em; }
+.capture-intro { font-size: 14px; color: var(--body); margin: 6px 0 24px; }
+.assisted-form .input-wrap { margin-bottom: 20px; }
+.assisted-form .field-error { margin-top: -12px; }
+.assisted-form .consent { margin-top: 4px; }
+.sale-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sale-heading > span { font-size: 12px; color: var(--body); }
+.client-summary { display: flex; align-items: center; gap: 12px; border-block: 1px solid var(--line); padding-block: 20px; margin-top: 20px; color: var(--body); }
+.client-summary > svg { flex-shrink: 0; }
+.client-summary > svg:last-child:not(:first-child) { margin-left: auto; }
+.client-summary strong { color: var(--ink); font-size: 14px; font-weight: 600; }
+.client-summary p { font-size: 12px; margin-top: 3px; }
+.client-summary.identified { color: var(--success); }
+.cart-items { padding-block: 6px; }
+.cart-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-block: 16px; }
+.cart-item + .cart-item { border-top: 1px solid #edf0f5; }
+.cart-item b { display: block; font-size: 14px; font-weight: 600; }
+.cart-item small { display: block; font-size: 12px; color: var(--body); margin-top: 3px; }
+.cart-item strong { font-size: 14px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.demo-benefit { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border-radius: 8px; background: #f1f4f8; color: var(--body); margin-top: 6px; }
+.demo-benefit > svg { margin-top: 1px; flex-shrink: 0; }
+.demo-benefit strong { display: block; font-size: 14px; font-weight: 600; }
+.demo-benefit p { font-size: 12px; margin-top: 3px; }
+.demo-benefit.applied { color: var(--success); background: var(--pale); }
+.sale-totals { margin: 20px 0; font-variant-numeric: tabular-nums; }
+.sale-totals > div { display: flex; justify-content: space-between; gap: 16px; color: var(--body); font-size: 14px; margin-top: 10px; }
+.sale-totals dd { margin: 0; white-space: nowrap; }
+.sale-totals .discount-row { color: var(--success); }
+.sale-totals .total-row { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 16px; font-family: var(--heading); font-size: 20px; font-weight: 800; color: var(--ink); }
+.sale-help { margin-top: 10px; text-align: center; font-size: 12px; color: var(--body); }
+.demo-receipt { border: 1px solid var(--success-line); background: var(--pale); color: var(--success); border-radius: 8px; padding: 16px; display: flex; align-items: flex-start; gap: 12px; }
+.demo-receipt > svg { flex-shrink: 0; }
+.demo-receipt h3 { font-size: 15px; }
+.demo-receipt p { font-size: 12px; line-height: 1.6; margin-top: 6px; }
+.success-card > .success-orbit { margin-bottom: 24px; }
+.customer-benefit { display: flex; align-items: flex-start; gap: 12px; background: var(--pale); color: var(--success); border-radius: 8px; padding: 20px; }
+.customer-benefit > svg { flex-shrink: 0; }
+.customer-benefit h2 { font-size: 18px; line-height: 1.4; letter-spacing: -.02em; }
+.customer-benefit p { font-size: 13px; margin-top: 6px; }
+.demo-customer-note { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; font-size: 12px; color: var(--body); line-height: 1.6; }
+@media (max-width: 900px) {
+  .capture-switch { margin-inline: 20px; }
+  .assisted-form { padding-inline: 20px; }
+}
+@media (max-width: 700px) {
+  .station-fields input { font-size: 16px; }
+  .sale-card > .primary { font-size: 14px; }
+}
+@media (max-width: 360px) {
+  .capture-switch { margin-inline: 16px; }
+  .capture-switch button { font-size: 12px; gap: 6px; }
+  .assisted-form { padding-inline: 16px; }
+  .customer-benefit { padding: 16px; }
 }

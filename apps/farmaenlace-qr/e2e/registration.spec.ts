@@ -21,8 +21,11 @@ async function registerCustomer(page: Page, session: {session:{id:string};qrToke
 }
 async function expectPromotions(page: Page, active: boolean) {
   const promotions = page.getByTestId('exclusive-promotion');
-  await expect(promotions).toHaveCount(2);
-  for (const promotion of await promotions.all()) await expect(promotion).toHaveAttribute('data-state', active ? 'active' : 'locked');
+  await expect(promotions).toHaveCount(active ? 2 : 0);
+  await expect(page.getByRole('heading',{name:'Promociones exclusivas'})).toHaveCount(active ? 1 : 0);
+  await expect(page.getByTestId('discount-status')).toHaveCount(active ? 1 : 0);
+  await expect(page.getByText('Promociones de registrados',{exact:true})).toHaveCount(active ? 1 : 0);
+  for (const promotion of await promotions.all()) await expect(promotion).toHaveAttribute('data-state', 'active');
 }
 async function post(context:BrowserContext,path:string,body:unknown) { return context.request.post(path,{headers:{origin:'http://localhost:3000'},data:body}); }
 test('QR → agradecimiento → cliente en caja y beneficio automático → venta simulada', async ({ browser }) => {
@@ -85,7 +88,7 @@ test('cancelar captura dictada limpia datos y deja beneficio pendiente', async (
     await page.getByRole('button',{name:'Datos dictados'}).click();
     await expect(page.getByLabel('Cédula del cliente')).toBeEmpty();
     await expect(page.getByLabel('Correo del cliente')).toBeEmpty();
-    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
+    await expectPromotions(page,false);
   } finally {await context.close();}
 });
 test('vencimiento/cancelación y red muestran error real; envío idéntico idempotente',async({browser})=>{
@@ -140,11 +143,11 @@ test('dictado manual registra desde caja, no asume consentimiento y aplica benef
     await page.getByLabel('Cédula del cliente').fill('0926687856');
     await page.getByLabel('Correo del cliente').fill('dictado@example.com');
     await expect(page.getByRole('checkbox')).not.toBeChecked();
-    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
+    await expectPromotions(page,false);
     await page.route('**/assisted-registration', route=>route.abort('failed'));
     await page.getByRole('button', {name:'Registrar cliente'}).click();
     await expect(page.locator('.alert')).toContainText('No hay conexión');
-    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
+    await expectPromotions(page,false);
     await page.unroute('**/assisted-registration');
     const submitted = page.waitForResponse(r=>r.url().endsWith('/assisted-registration'));
     await page.getByRole('button', {name:'Registrar cliente'}).click();
@@ -159,7 +162,7 @@ test('dictado manual registra desde caja, no asume consentimiento y aplica benef
     await expect(page.getByLabel('Cédula del cliente')).toHaveCount(0);
     await page.getByRole('button', {name:'Finalizar venta simulada'}).click();
     await page.getByRole('button', {name:'Siguiente cliente'}).click();
-    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
+    await expectPromotions(page,false);
     await page.getByRole('button', {name:'Datos dictados'}).click();
     await expect(page.getByLabel('Cédula del cliente')).toBeEmpty();
     await expect(page.getByLabel('Correo del cliente')).toBeEmpty();

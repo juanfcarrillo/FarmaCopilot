@@ -70,3 +70,16 @@ fallo de red, cancelación, recarga y siguiente cliente. QA CUA local a 320 px,
 tarjetas completas y ahorro legible; captura sin datos personales.
 
 Validación de la extensión: 6 pruebas de dominio/beneficio y 7 E2E correctas; lint, typecheck, build de producción y git diff --check correctos. Backend sin cambios; ensayos de registro exclusivamente contra emulador.
+
+
+## Corrección de visibilidad
+
+Por petición explícita posterior, las tarjetas, el estado de promociones y la
+fila de descuento no se renderizan antes del registro confirmado. Aparecen ya
+aplicadas después de QR o captura asistida. Se retiran al iniciar el siguiente
+cliente. Se eliminó el estado visual de candados/bloqueo; elegibilidad y cálculo
+permanecen iguales. Las pruebas existentes se adaptan para verificar ausencia
+completa del bloque, estado y fila antes del guardado, tras fallo/cancelación y
+al reiniciar; dos promociones activas después de guardar y al recargar.
+
+Verificación de visibilidad: 3 E2E relevantes correctas (QR y recarga, dictado/error/siguiente cliente, cancelación), lint, TypeScript y diff sin errores.

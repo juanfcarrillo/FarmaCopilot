@@ -13,9 +13,9 @@ para el despliegue automático del repositorio en Vercel.
 3. Firebase guarda el registro y la caja recibe automáticamente la confirmación.
    El teléfono agradece y permite continuar con el beneficio de demostración.
    No se muestra un código para copiar o introducir en Vendix.
-4. El mock presenta dos productos con precios ficticios. Muestra promociones
-   exclusivas bloqueadas: **10% demo en gel limpiador** y **10% demo en protector
-   solar**. Se activan y aplican automáticamente al confirmar el registro. El
+4. El mock presenta dos productos con precios ficticios. Tras confirmar el registro muestra promociones
+   exclusivas: **10% demo en gel limpiador** y **10% demo en protector
+   solar**. Aparecen activas y se aplican automáticamente al confirmar el registro. El
    ahorro se calcula por producto y no depende de aceptar correos promocionales.
 5. **Finalizar venta simulada** crea un comprobante local en el navegador;
    **Siguiente cliente** limpia el contexto y permite una nueva atención.
@@ -219,10 +219,10 @@ comprobante solo local y limpieza al cancelar. Ver [revisión del mock](docs/ven
 ## Promociones exclusivas por registro
 
 El catálogo ficticio de `src/lib/demo-sale.ts` es la fuente de las tarjetas y
-el cálculo en centavos. Estado sin registro/pendiente/vencido/cancelado mantiene
-las promociones bloqueadas y descuento cero. Registro confirmado por QR o datos
+el cálculo en centavos. Estado sin registro/pendiente/vencido/cancelado oculta
+las promociones, el estado de ahorro y la fila de descuento. El descuento es cero. Registro confirmado por QR o datos
 dictados desbloquea ambas, aplica $0,85 + $1,59 y actualiza el total de la compra
 demo a $21,96. El teléfono confirma que las promociones están activas. Siguiente
-cliente reinicia la elegibilidad; el consentimiento por correo es independiente.
+cliente reinicia la elegibilidad y oculta las promociones; el consentimiento por correo es independiente.
 No se conectaron campañas reales de PromoGo ni se conceden descuentos reales.
 [Vista móvil de promociones aplicadas](docs/preview/promociones-registrados-mobile.jpg).

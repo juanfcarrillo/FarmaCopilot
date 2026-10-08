@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, CheckCheck, Clipboard, CreditCard, LoaderCircle, LockKeyhole, Mail, QrCode, ReceiptText, RefreshCw, ScanLine, ShieldCheck, ShoppingBag, Store, Tag, UserRound, Wifi, WifiOff, X } from 'lucide-react';
+import { ArrowRight, CheckCheck, Clipboard, CreditCard, LoaderCircle, Mail, QrCode, ReceiptText, RefreshCw, ScanLine, ShieldCheck, ShoppingBag, Store, Tag, UserRound, Wifi, WifiOff, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Brand } from '@/components/brand';
 import { api, ApiFailure, messageOf, type SessionView } from '@/lib/client';
@@ -133,18 +133,18 @@ export default function PosPage() {
           <div className="qr-footer">{waiting && !expired ? <>{mode === 'qr' && <a className="text-button form-link" href={url} target="_blank" rel="noopener noreferrer">Abrir formulario <ArrowRight size={14}/></a>}<button className="text-button muted" disabled={busy} onClick={cancel}><X size={15}/>Cancelar QR</button></> : <span><ShieldCheck size={15}/> Sin cuentas ni contraseñas · Registro seguro</span>}</div>
         </section>
         <aside className="result-column"><section className="result-card sale-card"><div className="sale-heading"><div className="card-title"><ShoppingBag size={21} aria-hidden="true"/><h2>Compra de demostración</h2></div><span>2 productos</span></div>
-          <div className={`client-summary ${done ? 'identified' : ''}`}><UserRound size={21}/><div><strong data-testid="client-status" aria-live="polite">{done ? 'Cliente registrado' : 'Cliente sin identificar'}</strong><p>{done ? 'Registro guardado y recibido en esta caja.' : 'Regístralo para activar las promociones exclusivas.'}</p></div>{done && <CheckCheck size={20}/>}</div>
+          <div className={`client-summary ${done ? 'identified' : ''}`}><UserRound size={21}/><div><strong data-testid="client-status" aria-live="polite">{done ? 'Cliente registrado' : 'Cliente sin identificar'}</strong><p>{done ? 'Registro guardado y recibido en esta caja.' : 'Completa su registro para continuar con la compra.'}</p></div>{done && <CheckCheck size={20}/>}</div>
           <div className="cart-items">{DEMO_ITEMS.map(item => <div className="cart-item" key={item.name}><div><b>{item.name}</b><small>{item.detail}</small></div><strong>{money(item.cents)}</strong></div>)}</div>
-          <section className="exclusive-promotions" aria-labelledby="promotions-heading">
+          {done && <><section className="exclusive-promotions" aria-labelledby="promotions-heading">
             <div className="promotions-heading"><Tag size={18} aria-hidden="true"/><h3 id="promotions-heading">Promociones exclusivas</h3><span>DEMO</span></div>
             <p className="promotions-intro">Solo para clientes registrados. Se aplican automáticamente a estos productos.</p>
-            <div className="promotion-list">{promotions.map(promotion => <article key={promotion.id} className={`promotion-offer ${promotion.active ? 'active' : 'locked'}`} data-testid="exclusive-promotion" data-state={promotion.active ? 'active' : 'locked'}>
-              <span className="promotion-icon">{promotion.active ? <CheckCheck size={19} aria-hidden="true"/> : <LockKeyhole size={18} aria-hidden="true"/>}</span>
-              <div><h4>{promotion.percent}% en {promotion.itemName.toLowerCase()}</h4><p>{promotion.active ? 'Aplicada a esta compra' : 'Bloqueada · Requiere registro'}</p></div><strong>{promotion.active ? `−${money(promotion.discount)}` : `${promotion.percent}%`}</strong>
+            <div className="promotion-list">{promotions.map(promotion => <article key={promotion.id} className="promotion-offer active" data-testid="exclusive-promotion" data-state="active">
+              <span className="promotion-icon"><CheckCheck size={19} aria-hidden="true"/></span>
+              <div><h4>{promotion.percent}% en {promotion.itemName.toLowerCase()}</h4><p>Aplicada a esta compra</p></div><strong>{`−${money(promotion.discount)}`}</strong>
             </article>)}</div>
           </section>
-          <div className={`demo-benefit ${done ? 'applied' : ''}`}><ShieldCheck size={20}/><div><strong data-testid="discount-status" aria-live="polite">{done ? 'Promociones aplicadas' : 'Promociones bloqueadas'}</strong><p>{done ? `Ahorras ${money(sale.discount)} por ser cliente registrado.` : 'Se activarán cuando el registro esté confirmado.'}</p></div></div>
-          <dl className="sale-totals"><div><dt>Subtotal</dt><dd>{money(sale.subtotal)}</dd></div><div className={done ? 'discount-row' : ''}><dt>Promociones de registrados</dt><dd>−{money(sale.discount)}</dd></div><div className="total-row"><dt>Total simulado</dt><dd data-testid="sale-total">{money(sale.total)}</dd></div></dl>
+          <div className="demo-benefit applied"><ShieldCheck size={20}/><div><strong data-testid="discount-status" aria-live="polite">Promociones aplicadas</strong><p>Ahorras {money(sale.discount)} por ser cliente registrado.</p></div></div></>}
+          <dl className="sale-totals"><div><dt>Subtotal</dt><dd>{money(sale.subtotal)}</dd></div>{done && <div className="discount-row"><dt>Promociones de registrados</dt><dd>−{money(sale.discount)}</dd></div>}<div className="total-row"><dt>Total simulado</dt><dd data-testid="sale-total">{money(sale.total)}</dd></div></dl>
           {completed ? <div className="demo-receipt" role="status"><ReceiptText size={23}/><div><h3>Venta simulada completada</h3><p>Comprobante de demostración asociado a esta sesión. No se realizó un cobro ni se emitió una factura.</p></div></div> : <><button className="primary full" disabled={!done || busy || booting} onClick={() => setActive(current => current ? { ...current, receipt: demoSale(current.session.status) } : current)}><ReceiptText size={18}/>Finalizar venta simulada<ArrowRight size={17}/></button><p className="sale-help">{done ? 'Continúa la demostración con el cliente identificado.' : 'Primero registra al cliente por QR o datos dictados.'}</p></>}
         </section><div className="privacy-note"><ShieldCheck size={19}/><p><b>Datos personales protegidos.</b> El resumen de caja muestra el estado del registro, sin cédula ni correo.</p></div>{done && <button className="secondary full new-session" disabled={busy} onClick={nextCustomer}><RefreshCw size={17}/>Siguiente cliente<ArrowRight size={17}/></button>}</aside>
       </div>

@@ -1,14 +1,13 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, CheckCheck, Clipboard, CreditCard, LoaderCircle, Mail, QrCode, ReceiptText, RefreshCw, ScanLine, ShieldCheck, ShoppingBag, Store, UserRound, Wifi, WifiOff, X } from 'lucide-react';
+import { ArrowRight, CheckCheck, Clipboard, CreditCard, LoaderCircle, LockKeyhole, Mail, QrCode, ReceiptText, RefreshCw, ScanLine, ShieldCheck, ShoppingBag, Store, Tag, UserRound, Wifi, WifiOff, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Brand } from '@/components/brand';
 import { api, ApiFailure, messageOf, type SessionView } from '@/lib/client';
-import { DEMO_ITEMS, demoSale, money } from '@/lib/demo-sale';
+import { DEMO_ITEMS, demoSale, money, registeredPromotions } from '@/lib/demo-sale';
 import { isValidDocument } from '@/lib/validation';
 
 const ACTIVE_KEY = 'farmaenlace.active-session';
-const DEMO_PERCENT = 10;
 type Active = { session: SessionView; qrToken: string; receipt?: ReturnType<typeof demoSale> };
 type Capture = { document: string; email: string; marketing: boolean; idempotencyKey: string };
 
@@ -23,7 +22,7 @@ function AssistedForm({ busy, disabled, onSubmit }: { busy: boolean; disabled: b
     await onSubmit({ document, email, marketing, idempotencyKey: requestId.current });
   }
   return <form className="assisted-form" onSubmit={submit}>
-    <h3>El cliente te dicta sus datos</h3><p className="capture-intro">Regístralos aquí para continuar con la compra.</p>
+    <h3>El cliente te dicta sus datos</h3><p className="capture-intro">Regístralos para activar sus promociones exclusivas en caja.</p>
     <label className="form-label" htmlFor="assisted-document">Cédula del cliente</label>
     <div className={`input-wrap ${fieldError ? 'input-error' : ''}`}><CreditCard size={19}/><input id="assisted-document" inputMode="numeric" autoComplete="off" placeholder="10 dígitos" value={document} onChange={e => { setDocument(e.target.value.replace(/\D/g, '').slice(0, 10)); setFieldError(''); }} pattern="[0-9]{10}" minLength={10} maxLength={10} required disabled={busy || disabled} aria-invalid={!!fieldError} aria-describedby={fieldError ? 'assisted-error' : undefined}/></div>
     {fieldError && <p id="assisted-error" className="field-error" role="alert">{fieldError}</p>}
@@ -111,9 +110,10 @@ export default function PosPage() {
   function nextCustomer() { sessionStorage.removeItem(ACTIVE_KEY); setActive(null); setMode('qr'); setError(''); setConnection('idle'); }
   const seconds = session ? Math.max(0, Math.ceil((session.expiresAt - (clock || session.createdAt)) / 1000)) : 600;
   const waiting = session?.status === 'awaiting_customer', expired = session?.status === 'expired' || (waiting && seconds === 0), done = session?.status === 'registered' || session?.status === 'recorded_manual';
-  const sale = active?.receipt || demoSale(session?.status, DEMO_PERCENT), completed = !!active?.receipt;
+  const sale = active?.receipt || demoSale(session?.status), completed = !!active?.receipt;
   const url = active && baseUrl ? `${baseUrl}/registro#id=${active.session.id}&token=${active.qrToken}` : '';
   const statusLabel = done ? 'Cliente registrado' : expired ? 'Sesión vencida' : session?.status === 'cancelled' ? 'Sesión cancelada' : waiting ? 'Esperando al cliente' : 'Lista para empezar';
+  const promotions = registeredPromotions(session?.status);
   const cannotStart = busy || booting || restoreBlocked || !location.trim() || !register.trim();
   return <div className="pos-shell">
     <a className="skip-link" href="#registro-caja">Ir al registro en caja</a>
@@ -124,7 +124,7 @@ export default function PosPage() {
       <div className={`work-grid ${done ? 'registration-ready' : ''}`}>
         <section className="qr-card"><div className="card-head"><div className="card-title"><UserRound size={21} aria-hidden="true"/><h2>Identificar cliente</h2></div><span role="status" className={`status-pill ${done ? 'success' : expired || session?.status === 'cancelled' ? 'inactive' : ''}`}><span/>{statusLabel}</span></div>
           <div className="station-fields"><label><Store size={15}/> Local<input aria-label="Local" value={location} onChange={e => setLocation(e.target.value)} maxLength={60} disabled={!!session || busy || booting}/></label><label><Clipboard size={15}/> Caja<input aria-label="Caja" value={register} onChange={e => setRegister(e.target.value)} maxLength={40} disabled={!!session || busy || booting}/></label></div>
-          {done ? <div className="qr-stage stage-success"><div className="received-state"><span className="success-orbit"><CheckCheck size={38}/></span><h3>Gracias por registrarte.</h3><p>El cliente ya está vinculado a esta sesión. Puedes continuar con el beneficio de demostración.</p><span className="capture-source">{session.registrationMethod === 'assisted' ? 'Datos capturados por el dependiente' : 'Datos recibidos desde el QR'}</span></div></div> : <>
+          {done ? <div className="qr-stage stage-success"><div className="received-state"><span className="success-orbit"><CheckCheck size={38}/></span><h3>Gracias por registrarte.</h3><p>El cliente ya está vinculado a esta sesión. Sus promociones exclusivas ya están activas en esta compra demo.</p><span className="capture-source">{session.registrationMethod === 'assisted' ? 'Datos capturados por el dependiente' : 'Datos recibidos desde el QR'}</span></div></div> : <>
             <div className="capture-switch" aria-label="Método de registro"><button className={mode === 'qr' ? 'selected' : ''} aria-pressed={mode === 'qr'} disabled={busy || booting || restoreBlocked} onClick={() => { setMode('qr'); setError(''); }}><QrCode size={17}/>Por QR</button><button className={mode === 'assisted' ? 'selected' : ''} aria-pressed={mode === 'assisted'} disabled={busy || booting || restoreBlocked} onClick={() => { setMode('assisted'); setError(''); }}><UserRound size={17}/>Datos dictados</button></div>
             {mode === 'assisted' ? <AssistedForm busy={busy} disabled={cannotStart && !busy} onSubmit={submitAssisted}/> : <div className="qr-stage">
               {waiting && !expired ? <><div className="qr-frame" aria-label="QR para registro del cliente"><QRCodeSVG value={url || 'about:blank'} size={202} level="M" marginSize={1}/></div><h3>Pide al cliente que escanee el QR</h3><p>Completa sus datos en el teléfono y la caja se actualiza automáticamente.</p><div className={`countdown ${seconds < 60 ? 'urgent' : ''}`}><span/> Disponible por <b>{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</b></div></> : <><div className="empty-qr"><QrCode size={76} strokeWidth={1}/><span><ScanLine size={22}/></span></div><h3>{expired ? 'Esta sesión ya venció.' : session?.status === 'cancelled' ? 'El QR fue cancelado.' : 'Invita al cliente a registrarse'}</h3><p>{expired || session?.status === 'cancelled' ? 'Genera un nuevo QR o usa los datos dictados.' : 'Un registro breve para reconocerlo en esta compra.'}</p><button className="primary" onClick={create} disabled={cannotStart}>{busy ? <LoaderCircle size={18} className="spin"/> : <QrCode size={18}/>} {booting ? 'Recuperando sesión…' : 'Generar QR'}<ArrowRight size={18}/></button></>}
@@ -133,11 +133,19 @@ export default function PosPage() {
           <div className="qr-footer">{waiting && !expired ? <>{mode === 'qr' && <a className="text-button form-link" href={url} target="_blank" rel="noopener noreferrer">Abrir formulario <ArrowRight size={14}/></a>}<button className="text-button muted" disabled={busy} onClick={cancel}><X size={15}/>Cancelar QR</button></> : <span><ShieldCheck size={15}/> Sin cuentas ni contraseñas · Registro seguro</span>}</div>
         </section>
         <aside className="result-column"><section className="result-card sale-card"><div className="sale-heading"><div className="card-title"><ShoppingBag size={21} aria-hidden="true"/><h2>Compra de demostración</h2></div><span>2 productos</span></div>
-          <div className={`client-summary ${done ? 'identified' : ''}`}><UserRound size={21}/><div><strong data-testid="client-status" aria-live="polite">{done ? 'Cliente registrado' : 'Cliente sin identificar'}</strong><p>{done ? 'Registro guardado y recibido en esta caja.' : 'El beneficio se activa al confirmar el registro.'}</p></div>{done && <CheckCheck size={20}/>}</div>
+          <div className={`client-summary ${done ? 'identified' : ''}`}><UserRound size={21}/><div><strong data-testid="client-status" aria-live="polite">{done ? 'Cliente registrado' : 'Cliente sin identificar'}</strong><p>{done ? 'Registro guardado y recibido en esta caja.' : 'Regístralo para activar las promociones exclusivas.'}</p></div>{done && <CheckCheck size={20}/>}</div>
           <div className="cart-items">{DEMO_ITEMS.map(item => <div className="cart-item" key={item.name}><div><b>{item.name}</b><small>{item.detail}</small></div><strong>{money(item.cents)}</strong></div>)}</div>
-          <div className={`demo-benefit ${done ? 'applied' : ''}`}><ShieldCheck size={20}/><div><strong data-testid="discount-status" aria-live="polite">{done ? 'Beneficio demo aplicado' : 'Beneficio pendiente'}</strong><p>{done ? `${DEMO_PERCENT}% de descuento ficticio por registro.` : `${DEMO_PERCENT}% ficticio al registrar al cliente.`}</p></div></div>
-          <dl className="sale-totals"><div><dt>Subtotal</dt><dd>{money(sale.subtotal)}</dd></div><div className={done ? 'discount-row' : ''}><dt>Descuento demo</dt><dd>−{money(sale.discount)}</dd></div><div className="total-row"><dt>Total simulado</dt><dd data-testid="sale-total">{money(sale.total)}</dd></div></dl>
-          {completed ? <div className="demo-receipt" role="status"><ReceiptText size={23}/><div><h3>Venta simulada completada</h3><p>Comprobante de demostración asociado a esta sesión. No se realizó un cobro ni se emitió una factura.</p></div></div> : <><button className="primary full" disabled={!done || busy || booting} onClick={() => setActive(current => current ? { ...current, receipt: demoSale(current.session.status, DEMO_PERCENT) } : current)}><ReceiptText size={18}/>Finalizar venta simulada<ArrowRight size={17}/></button><p className="sale-help">{done ? 'Continúa la demostración con el cliente identificado.' : 'Primero registra al cliente por QR o datos dictados.'}</p></>}
+          <section className="exclusive-promotions" aria-labelledby="promotions-heading">
+            <div className="promotions-heading"><Tag size={18} aria-hidden="true"/><h3 id="promotions-heading">Promociones exclusivas</h3><span>DEMO</span></div>
+            <p className="promotions-intro">Solo para clientes registrados. Se aplican automáticamente a estos productos.</p>
+            <div className="promotion-list">{promotions.map(promotion => <article key={promotion.id} className={`promotion-offer ${promotion.active ? 'active' : 'locked'}`} data-testid="exclusive-promotion" data-state={promotion.active ? 'active' : 'locked'}>
+              <span className="promotion-icon">{promotion.active ? <CheckCheck size={19} aria-hidden="true"/> : <LockKeyhole size={18} aria-hidden="true"/>}</span>
+              <div><h4>{promotion.percent}% en {promotion.itemName.toLowerCase()}</h4><p>{promotion.active ? 'Aplicada a esta compra' : 'Bloqueada · Requiere registro'}</p></div><strong>{promotion.active ? `−${money(promotion.discount)}` : `${promotion.percent}%`}</strong>
+            </article>)}</div>
+          </section>
+          <div className={`demo-benefit ${done ? 'applied' : ''}`}><ShieldCheck size={20}/><div><strong data-testid="discount-status" aria-live="polite">{done ? 'Promociones aplicadas' : 'Promociones bloqueadas'}</strong><p>{done ? `Ahorras ${money(sale.discount)} por ser cliente registrado.` : 'Se activarán cuando el registro esté confirmado.'}</p></div></div>
+          <dl className="sale-totals"><div><dt>Subtotal</dt><dd>{money(sale.subtotal)}</dd></div><div className={done ? 'discount-row' : ''}><dt>Promociones de registrados</dt><dd>−{money(sale.discount)}</dd></div><div className="total-row"><dt>Total simulado</dt><dd data-testid="sale-total">{money(sale.total)}</dd></div></dl>
+          {completed ? <div className="demo-receipt" role="status"><ReceiptText size={23}/><div><h3>Venta simulada completada</h3><p>Comprobante de demostración asociado a esta sesión. No se realizó un cobro ni se emitió una factura.</p></div></div> : <><button className="primary full" disabled={!done || busy || booting} onClick={() => setActive(current => current ? { ...current, receipt: demoSale(current.session.status) } : current)}><ReceiptText size={18}/>Finalizar venta simulada<ArrowRight size={17}/></button><p className="sale-help">{done ? 'Continúa la demostración con el cliente identificado.' : 'Primero registra al cliente por QR o datos dictados.'}</p></>}
         </section><div className="privacy-note"><ShieldCheck size={19}/><p><b>Datos personales protegidos.</b> El resumen de caja muestra el estado del registro, sin cédula ni correo.</p></div>{done && <button className="secondary full new-session" disabled={busy} onClick={nextCustomer}><RefreshCw size={17}/>Siguiente cliente<ArrowRight size={17}/></button>}</aside>
       </div>
       <p className="integration-note"><b>Simulación de Vendix.</b> El registro de identidad se guarda en Firebase. Los productos, precios, descuento y venta son ficticios; todavía no hay conexión con Vendix ni PromoGo.</p>

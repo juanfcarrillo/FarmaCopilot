@@ -50,3 +50,23 @@ del cálculo demo y de la UI dictada; GREEN después de implementarlos. La prueb
 de limpieza al cancelar también falló primero y pasó tras corregir el estado.
 Lint, TypeScript, build de producción y `git diff --check` correctos. No se
 escribieron clientes de prueba en el proyecto cloud.
+
+
+## Extensión: promociones exclusivas de registrados
+
+El beneficio genérico del mock se presenta ahora como dos promociones de producto
+(10% gel y 10% protector solar), con bloqueo explícito antes de registrar. Ambas
+se activan automáticamente al confirmar el servidor por QR o captura asistida.
+La misma función deriva estado, ahorro por oferta y suma del descuento en el
+carrito, sin acumular otro descuento general. El correo opcional no habilita ni
+restringe estas ofertas en caja. El teléfono confirma activación y lista ambas.
+
+Self-review: elegibilidad únicamente en estados registered/recorded_manual,
+restauración desde servidor, ahorro cero pendiente/vencido/cancelado, reinicio
+para siguiente cliente y cierre ficticio sin escrituras de ventas. Catálogo
+demo y ayudas explícitas, sin APIs/credenciales/reglas nuevas. Las pruebas
+comprueban tarjetas bloqueadas/activas en QR y dictado con marketing=false,
+fallo de red, cancelación, recarga y siguiente cliente. QA CUA local a 320 px,
+tarjetas completas y ahorro legible; captura sin datos personales.
+
+Validación de la extensión: 6 pruebas de dominio/beneficio y 7 E2E correctas; lint, typecheck, build de producción y git diff --check correctos. Backend sin cambios; ensayos de registro exclusivamente contra emulador.

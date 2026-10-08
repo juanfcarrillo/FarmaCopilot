@@ -19,19 +19,26 @@ async function registerCustomer(page: Page, session: {session:{id:string};qrToke
   await expect(page.getByRole('button', {name:'Copiar código'})).toHaveCount(0);
   return (await (await submitted).json()).code as string;
 }
+async function expectPromotions(page: Page, active: boolean) {
+  const promotions = page.getByTestId('exclusive-promotion');
+  await expect(promotions).toHaveCount(2);
+  for (const promotion of await promotions.all()) await expect(promotion).toHaveAttribute('data-state', active ? 'active' : 'locked');
+}
 async function post(context:BrowserContext,path:string,body:unknown) { return context.request.post(path,{headers:{origin:'http://localhost:3000'},data:body}); }
 test('QR → agradecimiento → cliente en caja y beneficio automático → venta simulada', async ({ browser }) => {
   const posContext = await browser.newContext(), customerContext = await browser.newContext({viewport:{width:390,height:844},isMobile:true});
   await customerContext.addInitScript(() => { Object.defineProperty(Crypto.prototype, 'randomUUID', { value: undefined, configurable: true }); });
   const pos = await posContext.newPage(), customer = await customerContext.newPage();
   try {
-    const session=await createQr(pos), code=await registerCustomer(customer,session);
+    const session=await createQr(pos); await expectPromotions(pos,false);
+    const code=await registerCustomer(customer,session); await expectPromotions(pos,true);
+    await expect(customer.getByRole('heading',{name:'Tus promociones están activas'})).toBeVisible();
     await expect(pos.getByTestId('client-status')).toHaveText('Cliente registrado');
     expect((await (await posContext.request.get(`/api/registration-sessions/${session.session.id}`)).json()).code).toBe(code);
     await expect(pos.getByText('Datos personales protegidos.')).toBeVisible();
     await customer.reload(); await expect(customer.getByTestId('customer-thanks')).toBeVisible();
-    await pos.reload(); await expect(pos.getByTestId('client-status')).toHaveText('Cliente registrado');
-    await expect(pos.getByTestId('discount-status')).toHaveText('Beneficio demo aplicado');
+    await pos.reload(); await expect(pos.getByTestId('client-status')).toHaveText('Cliente registrado'); await expectPromotions(pos,true);
+    await expect(pos.getByTestId('discount-status')).toHaveText('Promociones aplicadas');
     await expect(pos.getByTestId('sale-total')).toContainText('21,96');
     await pos.getByRole('button',{name:'Finalizar venta simulada'}).click();
     await expect(pos.getByRole('heading',{name:'Venta simulada completada'})).toBeVisible();
@@ -78,7 +85,7 @@ test('cancelar captura dictada limpia datos y deja beneficio pendiente', async (
     await page.getByRole('button',{name:'Datos dictados'}).click();
     await expect(page.getByLabel('Cédula del cliente')).toBeEmpty();
     await expect(page.getByLabel('Correo del cliente')).toBeEmpty();
-    await expect(page.getByTestId('discount-status')).toHaveText('Beneficio pendiente');
+    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
   } finally {await context.close();}
 });
 test('vencimiento/cancelación y red muestran error real; envío idéntico idempotente',async({browser})=>{
@@ -133,17 +140,17 @@ test('dictado manual registra desde caja, no asume consentimiento y aplica benef
     await page.getByLabel('Cédula del cliente').fill('0926687856');
     await page.getByLabel('Correo del cliente').fill('dictado@example.com');
     await expect(page.getByRole('checkbox')).not.toBeChecked();
-    await expect(page.getByTestId('discount-status')).toHaveText('Beneficio pendiente');
+    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
     await page.route('**/assisted-registration', route=>route.abort('failed'));
     await page.getByRole('button', {name:'Registrar cliente'}).click();
     await expect(page.locator('.alert')).toContainText('No hay conexión');
-    await expect(page.getByTestId('discount-status')).toHaveText('Beneficio pendiente');
+    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
     await page.unroute('**/assisted-registration');
     const submitted = page.waitForResponse(r=>r.url().endsWith('/assisted-registration'));
     await page.getByRole('button', {name:'Registrar cliente'}).click();
     const response = await submitted; expect(response.status()).toBe(200); const session = await response.json();
     await expect(page.getByTestId('client-status')).toHaveText('Cliente registrado');
-    await expect(page.getByTestId('discount-status')).toHaveText('Beneficio demo aplicado');
+    await expect(page.getByTestId('discount-status')).toHaveText('Promociones aplicadas'); await expectPromotions(page,true);
     expect(session.registrationMethod).toBe('assisted');
     const entry = (await db.doc(`registrationSessions/${session.id}`).get()).data()!;
     expect((await db.doc(`customers/${entry.customerId}`).get()).get('marketing')).toBe(false);
@@ -152,7 +159,7 @@ test('dictado manual registra desde caja, no asume consentimiento y aplica benef
     await expect(page.getByLabel('Cédula del cliente')).toHaveCount(0);
     await page.getByRole('button', {name:'Finalizar venta simulada'}).click();
     await page.getByRole('button', {name:'Siguiente cliente'}).click();
-    await expect(page.getByTestId('discount-status')).toHaveText('Beneficio pendiente');
+    await expect(page.getByTestId('discount-status')).toHaveText('Promociones bloqueadas'); await expectPromotions(page,false);
     await page.getByRole('button', {name:'Datos dictados'}).click();
     await expect(page.getByLabel('Cédula del cliente')).toBeEmpty();
     await expect(page.getByLabel('Correo del cliente')).toBeEmpty();

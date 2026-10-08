@@ -6,10 +6,12 @@ description: >-
   con QR.
 status: deprecated
 generated:
-  by: agent
-  at: '2026-10-08T18:04:33Z'
+  by: 'process:development-harness'
+  at: '2026-10-08T18:04:42.179Z'
 sources:
-  - resource: /work/farmaenlace-qr-mvp-20261008.md
+  - id: original-session
+    resource: /work/session-farmaenlace-qr-mvp-20261008.md
+    title: Original session checkpoint
 goal: >-
   Acordar el MVP QR y, después de aprobación, delegar su implementación con
   contexto completo.

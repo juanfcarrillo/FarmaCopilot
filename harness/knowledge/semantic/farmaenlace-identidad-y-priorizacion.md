@@ -4,8 +4,11 @@ title: Farmaenlace — identidad del cliente y priorización comercial de promoc
 description: "Dos capacidades para alimentar ventas y el golden record: recomendación comercial con display POS e identificación/trazabilidad con registro QR; arquitectura propuesta y referentes."
 tags: [farmaenlace, clientes, trazabilidad, promociones, promogo, qr, golden-record, propuesta]
 status: draft
-generated: { by: agent, at: "2026-10-08T17:33:13.590Z" }
+generated: { by: agent, at: "2026-10-08T18:01:34Z" }
 sources:
+  - id: qr-mvp
+    resource: ../../../apps/farmaenlace-qr/README.md
+    title: MVP QR implementado y configuración de integración posterior
   - id: user-request
     resource: user://current-conversation/2026-10-08/farmaenlace
     title: Problemas, solución y beneficios declarados por el usuario el 8 de octubre de 2026
@@ -92,13 +95,13 @@ El display POS forma parte de esta capacidad funcional, implementado como adapta
 
 Agrupa:
 
-- **Identificar y emitir código:** cliente captura cédula/correo tras escanear el QR, se crea/reutiliza un perfil y se emite código de registro. Tendero ingresa el código en Vendix sin login en esta aplicación. Reconocimiento posterior por el mismo documento reutiliza el ID interno; una integración futura enlazará el perfil con transacciones reales.
-- **Registrar el resultado:** asociar cliente y compra; capturar oferta mostrada, aceptación o rechazo cuando se registre, promoción aplicada, compra y devolución. La compra queda vinculada aunque no se presente ninguna recomendación.
-- **Nueva feature — registro mediante QR:** presentar un QR al cliente para completar cédula/correo desde su teléfono; recibe código de registro. La consola del tendero recibe únicamente código/estado en tiempo real; el código se ingresa manualmente en Vendix.
+- **Identificar al cliente:** capturar cédula/correo mediante QR o dictado al dependiente. Reutilizar el perfil por documento y guardar el origen; caja recibe confirmación automáticamente, sin copiar códigos ni login.
+- **Registrar el resultado:** objetivo de integración futura: asociar identidad con compra real, promoción, aceptación y devolución. El mock actual solo persiste identidad y sesión; no registra una venta real.
+- **Registro mediante QR y fallback asistido:** cliente completa sus datos en el teléfono y recibe agradecimiento para continuar con el beneficio demo. Si dicta sus datos, el dependiente los ingresa en el mock de Vendix, con consentimiento opcional desmarcado.
 
-**Flujo QR vigente:** presentar QR de sesión → cliente escanea → completa cédula/correo → servidor persiste perfil/registro y emite código → tendero ingresa el código en Vendix. La constancia local de ingreso es manual, no confirma una venta vía API.
+**Flujo vigente corregido:** QR o datos dictados → servidor persiste perfil/registro → confirmación automática en caja → agradecimiento y beneficio de demostración → cierre de venta simulado local. Códigos internos permanecen por compatibilidad, sin exponerlos ni exigir su ingreso en la UI. No hay API real de Vendix o PromoGo.
 
-**Diseño aprobado para el MVP:** QR por sesión de venta, vigencia de diez minutos para envío; referencia opaca sin PII; código legible distinto del token de formulario y de la capacidad privada de consola. Ingreso manual del código en Vendix; no se presupone conector API. El tendero no consulta PII ni historial en esta consola sin login.
+**Diseño del MVP:** sesión de diez minutos; referencias opacas sin PII; capacidad privada de consola en cookie HttpOnly, sin cuentas ni login. El registro asistido exige esa capacidad de la caja y usa la misma transacción/HMAC del QR. Se conserva el primero confirmado ante concurrencia y no se sobrescriben datos canónicos ante discrepancias. No se consulta historial privado desde la consola.
 
 El envío de un formulario no acredita por sí solo identidad ni autoriza mostrar un historial privado. Reutilizar el perfil que corresponda, resolver discrepancias y registrar las preferencias/autorizaciones requeridas para los usos previstos. Mantener la alternativa de alta asistida y la continuidad de la venta ante fallas, conforme al diseño acordado.
 
@@ -112,13 +115,33 @@ El **golden record** se plantea como perfil unificado de referencia: ID interno 
 
 La arquitectura disponible no confirma que exista hoy ese golden record ni qué sistema sea su autoridad. Revisar Vendix, el maestro de clientes si existe y el repositorio para reutilizar o completar esa capacidad. Estas son dos agrupaciones funcionales; no obligan a crear dos microservicios ni una nueva base de clientes.
 
-### Fase aprobada: MVP QR sin auth/login y código para Vendix
+### Corrección vigente: agradecimiento, fallback dictado y mock Vendix
+
+El usuario pidió eliminar copiar/ingresar código para Vendix (mencionado oralmente como Bendix), agradecer al cliente y permitir continuar con un descuento. Añadió captura de cédula/correo dictados al dependiente. Se interpreta como simulación de atención/registro del cliente por el dependiente, sin onboarding ni login de staff.
+
+Implementación actual en `apps/farmaenlace-qr`: dos entradas al mismo registro (QR/asistido), `registrationMethod: qr|assisted` y fuente `pos_qr|pos_assisted`. Identidad persiste en Firestore real configurado; pruebas en emulador. Mock usa dos productos con precios ficticios y 10% demo al confirmar servidor; agradecimiento en teléfono, estado en caja y cierre simulado local por pestaña. No genera venta, factura, cobro, evento de compra ni constancia de Vendix. El descuento no proviene de PromoGo ni es promoción vigente. Se mantiene sin auth y sin SmartClub. Datos dictados solo en memoria mientras se capturan; limpieza al guardar/cambiar/cancelar. Contratos reales de ventas/promociones/golden record pendientes.
+
+Entrega publicada en main 87219a3, Vercel Ready dpl_6R8SFs4whMKsN6T7h6znx6mAyR9t y https://farma-copilot.vercel.app/pos. 24 casos correctos y QA escritorio/móvil. Work Item: `/work/farmaenlace-vendix-mock-20261008.md`. La evidencia de MVP inicial a continuación es histórica y fue sustituida en el comportamiento visible por esta corrección.
+
+### Promociones exclusivas por registro
+
+**Corrección de visibilidad vigente:** el usuario pidió que las ofertas solo aparezcan una vez que los datos estén guardados correctamente. Se oculta completamente el bloque de promociones, aviso y fila de descuento antes de registro confirmado, sin candados ni estado bloqueado visible. Tras QR/asistido se muestran aplicadas; al siguiente cliente vuelven a ocultarse. Entrega main d136166, Vercel Ready dpl_7FReGnkab5TosrJ7VRBQTjhaHhyD, alias público verificado sin ofertas antes de registrar; 3 E2E relevantes, lint/tipos/build correctos. Work Item `/work/farmaenlace-promociones-visibilidad-20261008.md`. La presentación bloqueada descrita a continuación corresponde a la versión anterior.
+
+Corrección posterior del usuario: activar promociones únicamente a clientes registrados tras capturar sus datos. El mock muestra dos ofertas de demostración bloqueadas hasta registro confirmado (QR o dictado): 10% en gel limpiador y 10% en protector solar. Luego se aplican automáticamente por producto ($0,85 + $1,59), total demo $21,96. El estado y total derivan del mismo catálogo; no se acumula el descuento genérico anterior. Consentimiento de correos independiente y opcional. Cancelación/vencimiento/espera no habilitan ofertas; siguiente cliente vuelve a bloquearlas. Teléfono agradece, confirma activación y enumera las ofertas. No son campañas reales de PromoGo, no hay autorización de descuento real ni venta corporativa. Entrega main 975fcd5, Vercel Ready dpl_7FHE93qQfStUSBFsEjYfMfb25H14, alias público verificado. 13 pruebas pertinentes correctas (6 dominio y 7 E2E), lint/tipos/build correctos. Work Item `/work/farmaenlace-promociones-registrados-20261008.md`.
+
+### Fase inicial: MVP QR sin auth/login y código para Vendix (histórico)
 
 El usuario aprobó iniciar la segunda capacidad y lanzar un subagente con el mismo modelo/esfuerzo y contexto completo. Corrigió explícitamente el alcance: sin auth/login del tendero; cliente escanea QR, registra datos y el código se registra en Vendix. Subagente qr_mvp_builder lanzado con fork_turns all y sin overrides. React/Next.js, Firestore servidor y Vercel; Firebase Auth excluido.
 
-Implementación en curso: Next.js/React/TypeScript en Vercel, Firestore Admin exclusivamente servidor y actualizaciones SSE por la API Node.js. Consola abierta sin cuenta/login, aislada por capacidad opaca de navegador en cookie HttpOnly; presenta QR y código/estado sin PII. Cliente envía cédula/correo, se persiste perfil/registro y recibe código legible único. Tendero introduce ese código manualmente en Vendix; puede registrar constancia manual opcional. Sin monto/ticket obligatorio ni venta confirmada inventada; integración real pendiente de contrato/API. Firestore directo de cliente deny-all, sin autenticación anónima oculta. Validación local con Emulator Suite y datos sintéticos. Despliegue real depende de acceso configurado.
+MVP implementado en `apps/farmaenlace-qr`: Next.js/React/TypeScript preparado para Vercel, Firestore Admin exclusivamente servidor y actualizaciones SSE por la API Node.js. Consola abierta sin cuenta/login, aislada por capacidad opaca de navegador en cookie HttpOnly; presenta QR y código/estado sin PII. Cliente envía cédula/correo, se persiste perfil/registro y recibe código legible único. Tendero introduce ese código manualmente en Vendix; puede registrar constancia manual opcional. Sin monto/ticket obligatorio ni venta confirmada inventada; integración real pendiente de contrato/API. Firestore directo de cliente deny-all, sin autenticación anónima oculta. Validado con Emulator Suite y datos sintéticos, E2E de dos cajas/contextos y revisión manual en navegador; no desplegado en cloud.
 
-Retomar desde [Work Item MVP QR](/work/farmaenlace-qr-mvp-20261008.md) y [propuesta OpenSpec](../../openspec/changes/farmaenlace-qr-mvp-20261008/proposal.md). Aprobación explícita registrada para las specs revisadas sin auth. El flujo anterior con confirmación de datos por staff y Firebase Auth queda sustituido.
+Entrega local cerrada en [Work Item MVP QR](/work/farmaenlace-qr-mvp-20261008.md) y [OpenSpec archivado](../../openspec/changes/archive/2026-10-08-farmaenlace-qr-mvp-20261008/proposal.md). Aprobación explícita registrada para las specs revisadas sin auth. El flujo anterior con confirmación de datos por staff y Firebase Auth queda sustituido. 17 pruebas, lint, tipos y build correctos; conexión cloud diferida por el usuario.
+
+Despliegue precisado por el usuario: Vercel usará el repositorio actual con despliegue automático; proporcionará Firebase después. Completar implementación y validación con emulador, dejar variables y configuración listas, sin crear/publicar proyectos manualmente. La conexión cloud se retoma cuando entregue Firebase.
+
+La recarga del cliente conserva código sin guardar PII en el navegador; navegar a otro QR reinicia el formulario. La consola conserva la referencia de sesión ante fallos de red y permite reintentar. El perfil interno deduplica por cédula mediante índice HMAC y deja discrepancias de correo/preferencias pendientes sin sobrescritura pública. Es una base de referencia no verificada, todavía sin sincronización con el maestro corporativo. Guía de ejecución/configuración: `apps/farmaenlace-qr/README.md`; Root Directory de Vercel `apps/farmaenlace-qr`.
+
+El usuario proporcionó Firebase real: proyecto `farma-copilot-2026`, nombre «Farma Copilot», RTDB `https://farma-copilot-2026-default-rtdb.firebaseio.com` y confirmó Firestore creado en `us-central1`. Se conserva Firestore; RTDB no se usa. Reportó reglas cloud temporalmente abiertas; las locales siguen deny-all. Configuración pública web recibida, sin credenciales Admin. El usuario configurará las credenciales privadas en Vercel; plantilla `.env.production.example` lista. REST sin auth a documento inexistente respondió 404, sin leer/escribir datos; backend cloud aún no verificado. [Seguimiento cloud](/work/farmaenlace-firebase-cloud-20261008.md).
 
 ## Dirección de producto precisada por el usuario
 

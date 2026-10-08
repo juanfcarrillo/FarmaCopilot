@@ -1,26 +1,26 @@
 ---
-type: Work Item
-title: MVP de identificación y trazabilidad QR Farmaenlace
-description: >-
-  Implementar el alcance aprobado sin login, registro móvil por QR, código para
-  Vendix, tiempo real y perfil de referencia.
-status: deprecated
+type: Development Episode
+title: 'Closed change: farmaenlace/farmaenlace-qr-mvp-20261008'
+description: Immutable record for farmaenlace work item farmaenlace-qr-mvp-20261008.
+tags:
+  - episode
+  - farmaenlace
+  - high
+status: draft
 generated:
-  by: agent
-  at: '2026-10-08T18:04:33Z'
+  by: 'process:development-harness'
+  at: '2026-10-08T18:04:42.176Z'
 sources:
-  - resource: /semantic/farmaenlace-identidad-y-priorizacion.md
-  - resource: ../../openspec/changes/archive/2026-10-08-farmaenlace-qr-mvp-20261008/proposal.md
+  - id: work-item
+    resource: /work/farmaenlace-qr-mvp-20261008.md
+    title: Closed Work Item
+workflow_state: done
 project: farmaenlace
 change_id: farmaenlace-qr-mvp-20261008
-workflow_state: done
-complexity: high
-human_gate_approved: true
-next_step: >-
-  Entrega local completa; archivar y retomar conexión cloud cuando el usuario
-  proporcione Firebase.
-blockers: []
+archive_path: /openspec/changes/archive/2026-10-08-farmaenlace-qr-mvp-20261008
 ---
+# Outcome
+
 # Alcance y clasificación
 
 El usuario aprobó la segunda capacidad y autorizó un subagente con el mismo modelo/esfuerzo y contexto completo. Se lanzó qr_mvp_builder; las specs revisadas excluyen auth/login y definen código para ingreso manual en Vendix. La implementación está en curso.
@@ -67,3 +67,7 @@ Principal revisó dominio, transacciones, HTTP/API, SSE y límites de integraci�
 - `npm ci --dry-run --ignore-scripts --offline --no-audit --no-fund`: correcto con lockfile y .npmrc.
 - Capturas verificadas en `apps/farmaenlace-qr/docs/preview/`.
 - No despliegue cloud ni API Vendix verificados: diferidos explícitamente por el usuario, configuración y contrato documentados. El perfil no es todavía el maestro corporativo ni valida identidad.
+
+# Next knowledge action
+
+Review any durable promotion separately with a human.

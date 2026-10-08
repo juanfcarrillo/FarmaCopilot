@@ -173,9 +173,11 @@ Lint sin errores/advertencias, TypeScript y build de producción correctos.
 Revisión manual en navegador completó QR, registro, actualización de caja,
 recarga del código y constancia manual con datos sintéticos.
 Instalación reproducible revisada con `npm ci --dry-run --ignore-scripts --offline`.
-Capturas: [caja](docs/preview/pos-desktop.png) y
-[resultado móvil](docs/preview/registro-mobile.png).
-Firebase real, despliegue automático Vercel y vínculo técnico Vendix pendientes.
+Capturas de la interfaz actual: [caja tablet](docs/preview/pos-desktop.jpg),
+[caja móvil](docs/preview/pos-mobile.jpg), [formulario móvil](docs/preview/registro-form-mobile.jpg)
+y [resultado móvil](docs/preview/registro-mobile.jpg).
+[Revisión UI con Impeccable e identidad pública](docs/ui-review.md).
+Firebase real y despliegue Vercel verificados; el vínculo con Vendix continúa mediante ingreso manual, sin API.
 
 Referencias: [Next.js en Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs),
 [duración de funciones](https://vercel.com/docs/functions/configuring-functions/duration),

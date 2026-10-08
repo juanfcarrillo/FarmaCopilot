@@ -1,1 +1,5 @@
-export function Brand({ light = false }: { light?: boolean }) { return <div className={`brand ${light ? 'brand-light' : ''}`}><span className="brand-symbol" aria-hidden="true"><i/><i/></span><span>farmaenlace<span className="brand-dot">.</span></span></div>; }
+import Image from 'next/image';
+
+export function Brand() {
+  return <div className="brand"><Image src="/farmaenlace-logo.svg" alt="Farmaenlace" width={290} height={53} priority /></div>;
+}
